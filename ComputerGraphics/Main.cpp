@@ -18,15 +18,26 @@ int main()
 	window->Show();
 	window->Update();
 
-	// Message Loop for Windows Events
-    MSG msg;
-    while (GetMessage(&msg, NULL, 0, 0))
-    {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
+	// Application Loop
+	ULONG frame = 0;
+	bool exiting = false;
+	do
+	{
+		frame++;
 
-    return (int)msg.wParam;
+		std::cout << "Frame: " << frame << std::endl;
+
+		// Process Message Queue
+		MSG msg;
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		{
+			std::cout << "Processing Message: " << msg.message << std::endl;
+
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+	} 
+	while (!exiting);
 
     return 0;
 }
