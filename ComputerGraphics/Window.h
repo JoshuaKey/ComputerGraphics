@@ -9,9 +9,6 @@ class WindowFactory;
 
 class Window
 {
-	friend class WindowFactory;
-
-private:
 	Window(TCHAR const * const windowTitle,
 		HINSTANCE const instance,
 		HWND const window) :
@@ -22,20 +19,6 @@ private:
 	{ 
 	}
 public:
-	//Window(Window const& window) noexcept :
-	//	m_windowTitle(window.m_windowTitle),
-	//	m_renderer(window.m_renderer),
-	//	m_instanceHandle(window.m_instanceHandle),
-	//	m_windowHandle(window.m_windowHandle)
-	//{
-	//}
-	//Window(Window const&& window) noexcept :
-	//	m_windowTitle(window.m_windowTitle),
-	//	m_renderer(window.m_renderer),
-	//	m_instanceHandle(window.m_instanceHandle),
-	//	m_windowHandle(window.m_windowHandle)
-	//{
-	//}
 	~Window()
 	{
 		m_instanceHandle = NULL;
@@ -56,10 +39,12 @@ private:
 	// Instanced Callback function for Message handling
 	bool HandleMessages(UINT message, WPARAM wParam, LPARAM lParam);
 
-public:
-	TCHAR const * const m_windowTitle;
+	void SetInstanceHandle(HINSTANCE const handle) { m_instanceHandle = handle; }
+	void SetWindowHandle(HWND const handle) { m_windowHandle = handle; }
 
 private:
+	TCHAR const* const m_windowTitle;
+
 	Renderer m_renderer; 
 
 	HINSTANCE m_instanceHandle; // Handle to the "instance" that created this window (Executable / DLL)

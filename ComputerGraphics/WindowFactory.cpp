@@ -34,6 +34,8 @@ std::unique_ptr<Window> WindowFactory::Create(TCHAR const * const WINDOW_TITLE)
 		}
 	}
 
+	std::unique_ptr<Window> window(new Window(WINDOW_TITLE, instanceHandle, NULL));
+
 	// Create Window
 	HWND windowHandle = CreateWindowEx(
 		0,						// Optional window styles.
@@ -49,7 +51,7 @@ std::unique_ptr<Window> WindowFactory::Create(TCHAR const * const WINDOW_TITLE)
 		NULL,					// Parent window    
 		NULL,					// Menu
 		instanceHandle,			// Instance handle
-		NULL					// Additional application data
+		window.get()			// Additional application data
 	);
 
 	// Check Window Handle
@@ -60,44 +62,10 @@ std::unique_ptr<Window> WindowFactory::Create(TCHAR const * const WINDOW_TITLE)
 		return nullptr;
 	}
 
-	std::unique_ptr<Window> window(new Window(WINDOW_TITLE, instanceHandle, windowHandle));
+	window->SetWindowHandle(windowHandle);
 
 	// Set the Userdata so the Callback function knows which Window instance is being called
 	SetWindowLongPtrW(windowHandle, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(window.get()));
 
 	return window;
-}
-
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	
-	
-	//PAINTSTRUCT ps;
- //   HDC hdc;
- //   TCHAR greeting[] = TEXT("Hello, Windows desktop!");
-
- //   switch (message)
- //   {
- //   case WM_PAINT:
- //       hdc = BeginPaint(hWnd, &ps);
-
- //       // Here your application is laid out.
- //       // For this introduction, we just print out "Hello, Windows desktop!"
- //       // in the top left corner.
- //       TextOut(hdc,
- //           5, 5,
- //           greeting, _tcslen(greeting));
- //       // End application specific layout section.
-
- //       EndPaint(hWnd, &ps);
- //       break;
- //   case WM_DESTROY:
- //       PostQuitMessage(0);
- //       break;
- //   default:
- //       return DefWindowProc(hWnd, message, wParam, lParam);
- //       break;
- //   }
-
-    return 0;
 }
