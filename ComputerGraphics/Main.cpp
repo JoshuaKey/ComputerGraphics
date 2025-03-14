@@ -5,16 +5,19 @@
 
 int main()
 {
-	Window* window = WindowFactory::Create();
+	TCHAR const WINDOW_TITLE[] = TEXT("Sample Window");
+
+	std::unique_ptr<Window> window = WindowFactory::Create(WINDOW_TITLE);
 	if (!window || !window->IsValid())
 	{
-		MessageBoxW(NULL, TEXT("ERROR"), TEXT("Could not create Window!"), MB_OK | MB_ICONINFORMATION);
+		MessageBoxW(NULL, TEXT("Could not create Window!"), TEXT("ERROR"), MB_OK);
 		return -1;
 	}
 
 	window->Show();
 	window->Update();
 
+	// Message Loop for Windows Events
     MSG msg;
     while (GetMessage(&msg, NULL, 0, 0))
     {
