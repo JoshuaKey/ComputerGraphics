@@ -15,6 +15,18 @@ HINSTANCE WindowsUtility::GetRunningInstance()
 	return ((HINSTANCE)&__ImageBase);
 }
 
+void WindowsUtility::DisplayError(TCHAR const* const customError)
+{
+	if (customError)
+	{
+		MessageBox(NULL, customError, TEXT("ERROR"), MB_OK);
+	}
+	else
+	{
+		MessageBox(NULL, TEXT("Recieved Error"), TEXT("ERROR"), MB_OK);
+	}
+}
+
 void WindowsUtility::DisplayLastError(TCHAR const* const customError)
 {
 	DWORD errorCode = GetLastError();

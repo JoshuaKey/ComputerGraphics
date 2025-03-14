@@ -10,7 +10,8 @@ int main()
 	std::unique_ptr<Window> window = WindowFactory::Create(WINDOW_TITLE);
 	if (!window || !window->IsValid())
 	{
-		MessageBoxW(NULL, TEXT("Could not create Window!"), TEXT("ERROR"), MB_OK);
+		WindowsUtility::DisplayError(TEXT("Could not create Window!"));
+
 		return -1;
 	}
 

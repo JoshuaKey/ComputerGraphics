@@ -16,6 +16,9 @@ namespace WindowsUtility
 	// For more information: https://devblogs.microsoft.com/oldnewthing/20041025-00/?p=37483
 	HINSTANCE GetRunningInstance();
 
+	// Displays a MessageBox with an Error Message
+	void DisplayError(TCHAR const* const customError);
+
 	// Displays a MessageBox with the Last Error from the Windows API.
 	// For more information: https://learn.microsoft.com/en-us/windows/win32/Debug/retrieving-the-last-error-code
 	void DisplayLastError(TCHAR const * const customError = nullptr);
