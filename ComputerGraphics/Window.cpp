@@ -64,6 +64,7 @@ bool Window::HandleMessages(UINT message, WPARAM wParam, LPARAM lParam)
 
 	static HBITMAP bitmapHandle { NULL };
 	static HDC bitmapDeviceContext { NULL };
+	static void* data = nullptr;
 
 	switch (message)
 	{
@@ -95,7 +96,6 @@ bool Window::HandleMessages(UINT message, WPARAM wParam, LPARAM lParam)
 
 			// Create Bitmap
 			// This will give us a Handle to our new Bitmap and will point Data to a valid array where the Bitmap Color is located
-			void *data = nullptr;
 			bitmapHandle = CreateDIBSection(bitmapDeviceContext, &bitmapInfo, DIB_RGB_COLORS, &data, NULL, 0);
 			if (bitmapHandle == NULL || data == NULL)
 			{
@@ -144,6 +144,22 @@ bool Window::HandleMessages(UINT message, WPARAM wParam, LPARAM lParam)
 			}
 
 			EndPaint(m_windowHandle, &ps);
+			return true;
+		}
+		case WM_LBUTTONDOWN:
+		{
+			if(!data) { return false; }
+
+			for (UINT i = 0; i < BITMAP_WIDTH * BITMAP_HEIGHT; ++i)
+			{
+				((unsigned char*)data)[(i * 4) + 0] -= 1;
+				((unsigned char*)data)[(i * 4) + 1] -= 1; 
+				((unsigned char*)data)[(i * 4) + 2] -= 1;
+				((unsigned char*)data)[(i * 4) + 3] = 0;
+			}
+
+			InvalidateRect(m_windowHandle, 0, true);
+
 			return true;
 		}
 		case WM_DESTROY:
