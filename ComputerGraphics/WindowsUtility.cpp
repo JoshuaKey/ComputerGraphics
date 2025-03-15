@@ -32,17 +32,21 @@ void WindowsUtility::DisplayLastError(TCHAR const* const customError)
 	DWORD errorCode = GetLastError();
 
 	// Copy Custom Error to Message Buffer
-	TCHAR errorMessageBuffer[1024] { 0 };
-	uint32_t customErrorLength = 0;
+	constexpr DWORD MESSAGE_BUFFER_SIZE = 1024;
+	TCHAR errorMessageBuffer[MESSAGE_BUFFER_SIZE] { 0 };
+	size_t customErrorLength = 0;
 	if (customError)
 	{
 		customErrorLength = _tcslen(customError);
-		if (customErrorLength < sizeof(errorMessageBuffer))
+		if (customErrorLength < MESSAGE_BUFFER_SIZE)
 		{
 			memcpy(errorMessageBuffer, customError, customErrorLength * sizeof(TCHAR));
 
-			errorMessageBuffer[customErrorLength] = '\n';
-			customErrorLength += 1;
+			if (customErrorLength + 1 < MESSAGE_BUFFER_SIZE)
+			{
+				errorMessageBuffer[customErrorLength] = TEXT('\n');
+				customErrorLength += 1;
+			}
 		}
 	}
 
@@ -52,7 +56,7 @@ void WindowsUtility::DisplayLastError(TCHAR const* const customError)
 						errorCode,
 						MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 						errorMessageBuffer + customErrorLength,
-						sizeof(errorMessageBuffer) - customErrorLength,
+						MESSAGE_BUFFER_SIZE - static_cast<DWORD>(customErrorLength),
 						NULL)) 
 	{ 
 		// Failed to format Error Message
