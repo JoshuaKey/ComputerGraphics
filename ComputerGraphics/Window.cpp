@@ -18,6 +18,11 @@ void Window::Update()
 	UpdateWindow(m_windowHandle);
 }
 
+void Window::Invalidate()
+{
+	InvalidateRect(m_windowHandle, NULL, false);
+}
+
 bool Window::IsValid() const
 {
 	return m_windowHandle != NULL;
@@ -152,9 +157,9 @@ bool Window::HandleMessages(UINT message, WPARAM wParam, LPARAM lParam)
 
 			for (UINT i = 0; i < BITMAP_WIDTH * BITMAP_HEIGHT; ++i)
 			{
-				((unsigned char*)data)[(i * 4) + 0] -= 1;
-				((unsigned char*)data)[(i * 4) + 1] -= 1; 
-				((unsigned char*)data)[(i * 4) + 2] -= 1;
+				((unsigned char*)data)[(i * 4) + 0] -= 5;
+				((unsigned char*)data)[(i * 4) + 1] -= 5; 
+				((unsigned char*)data)[(i * 4) + 2] -= 5;
 				((unsigned char*)data)[(i * 4) + 3] = 0;
 			}
 

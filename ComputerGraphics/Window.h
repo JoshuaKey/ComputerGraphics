@@ -9,6 +9,8 @@ class WindowFactory;
 
 class Window
 {
+	friend class WindowFactory;
+
 	Window(TCHAR const * const windowTitle,
 		HINSTANCE const instance,
 		HWND const window) :
@@ -29,6 +31,7 @@ public:
 	void Show();
 	void Hide();
 	void Update();
+	void Invalidate();
 
 	bool IsValid() const;
 
@@ -50,5 +53,4 @@ private:
 	HINSTANCE m_instanceHandle; // Handle to the "instance" that created this window (Executable / DLL)
 	HWND m_windowHandle;		// Handle to the actual Window
 	
-	friend class WindowFactory;
 };

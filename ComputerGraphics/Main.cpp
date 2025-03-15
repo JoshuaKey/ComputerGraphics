@@ -5,9 +5,11 @@
 
 int main()
 {
-	TCHAR const WINDOW_TITLE[] = TEXT("Sample Window");
+	constexpr UINT WINDOW_WIDTH = 1280;
+	constexpr UINT WINDOW_HEIGHT = 720;
+	constexpr TCHAR WINDOW_TITLE[] = TEXT("Sample Window");
 
-	std::unique_ptr<Window> window = WindowFactory::Create(WINDOW_TITLE);
+	std::unique_ptr<Window> window = WindowFactory::Create(WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 	if (!window || !window->IsValid())
 	{
 		WindowsUtility::DisplayError(TEXT("Could not create Window!"));
@@ -20,12 +22,12 @@ int main()
 
 	// Application Loop
 	ULONG frame = 0;
-	bool exiting = false;
-	do
+	while (window->IsValid())
 	{
 		frame++;
-
 		std::cout << "Frame: " << frame << std::endl;
+
+		window->Invalidate();
 
 		// Process Message Queue
 		MSG msg;
@@ -37,7 +39,6 @@ int main()
 			DispatchMessage(&msg);
 		}
 	} 
-	while (!exiting);
 
     return 0;
 }
