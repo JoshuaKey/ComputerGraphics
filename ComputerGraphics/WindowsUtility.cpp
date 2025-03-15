@@ -66,3 +66,28 @@ void WindowsUtility::DisplayLastError(TCHAR const* const customError)
 
 	MessageBox(NULL, errorMessageBuffer, TEXT("ERROR"), MB_OK);
 }
+
+HBITMAP WindowsUtility::CreateBitmap(UINT width, UINT height, HDC digitalContext, void** data)
+{
+	// Create BitMap Info structs
+	BITMAPINFOHEADER bitmapInfoHeader;
+	bitmapInfoHeader.biSize = sizeof(BITMAPINFOHEADER);
+	bitmapInfoHeader.biWidth = width;
+	bitmapInfoHeader.biHeight = height;
+	bitmapInfoHeader.biPlanes = 1;
+	bitmapInfoHeader.biBitCount = sizeof(char) * 4 * 8;
+	bitmapInfoHeader.biCompression = BI_RGB;
+	bitmapInfoHeader.biSizeImage = width * height * sizeof(char) * 4;
+	bitmapInfoHeader.biClrUsed = 0;
+	bitmapInfoHeader.biClrImportant = 0;
+
+	BITMAPINFO bitmapInfo;
+	bitmapInfo.bmiHeader = bitmapInfoHeader;
+	bitmapInfo.bmiColors->rgbBlue = 0;
+	bitmapInfo.bmiColors->rgbGreen = 0;
+	bitmapInfo.bmiColors->rgbRed = 0;
+	bitmapInfo.bmiColors->rgbReserved = 0;
+
+	HBITMAP bitmapHandle = CreateDIBSection(digitalContext, &bitmapInfo, DIB_RGB_COLORS, data, NULL, 0);
+	return bitmapHandle;
+}

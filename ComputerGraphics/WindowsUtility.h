@@ -22,5 +22,9 @@ namespace WindowsUtility
 	// Displays a MessageBox with the Last Error from the Windows API.
 	// For more information: https://learn.microsoft.com/en-us/windows/win32/Debug/retrieving-the-last-error-code
 	void DisplayLastError(TCHAR const * const customError = nullptr);
+
+	// Creates a Bitmap on the Digital Context with data
+	// For more information: https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-createdibsection
+	HBITMAP CreateBitmap(UINT width, UINT height, HDC digitalContext, void** data);
 };
 
