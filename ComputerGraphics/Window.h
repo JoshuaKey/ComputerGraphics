@@ -32,6 +32,7 @@ public:
 	void Hide();
 	void Update();
 	void Invalidate();
+	void Destroy();
 
 	bool IsValid() const;
 
@@ -40,7 +41,7 @@ private:
 	static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 	// Instanced Callback function for Message handling
-	bool HandleMessages(UINT message, WPARAM wParam, LPARAM lParam);
+	LRESULT HandleMessages(UINT message, WPARAM wParam, LPARAM lParam);
 
 	void SetInstanceHandle(HINSTANCE const handle) { m_instanceHandle = handle; }
 	void SetWindowHandle(HWND const handle) { m_windowHandle = handle; }

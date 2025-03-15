@@ -1,6 +1,7 @@
 #include "Window.h"
 #include <objidl.h>
 #include <gdiplus.h>
+#include <uxtheme.h>
 #include "WindowsUtility.h"
 
 void Window::Show()
@@ -21,6 +22,14 @@ void Window::Update()
 void Window::Invalidate()
 {
 	InvalidateRect(m_windowHandle, NULL, false);
+}
+
+void Window::Destroy()
+{
+	PostQuitMessage(0);
+
+	m_instanceHandle = NULL;
+	m_windowHandle = NULL;
 }
 
 bool Window::IsValid() const
@@ -53,16 +62,17 @@ LRESULT Window::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	// Pass Message to Window Instance
 	if (window && window->IsValid())
 	{
-		if (window->HandleMessages(message, wParam, lParam))
+		LRESULT result = window->HandleMessages(message, wParam, lParam);
+		if (result != -1)
 		{
-			return 0;
+			return result;
 		}
 	}
 
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
-bool Window::HandleMessages(UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT Window::HandleMessages(UINT message, WPARAM wParam, LPARAM lParam)
 {
 	constexpr UINT BITMAP_WIDTH = 125;
 	constexpr UINT BITMAP_HEIGHT = 20;
@@ -75,38 +85,15 @@ bool Window::HandleMessages(UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		case WM_CREATE:
 		{
-			// Create BitMap Info structs
-			BITMAPINFOHEADER bitmapInfoHeader;
-			bitmapInfoHeader.biSize = sizeof(BITMAPINFOHEADER);
-			bitmapInfoHeader.biWidth = BITMAP_WIDTH;
-			bitmapInfoHeader.biHeight = BITMAP_HEIGHT;
-			bitmapInfoHeader.biPlanes = 1;
-			bitmapInfoHeader.biBitCount = sizeof(char) * 4 * 8;
-			bitmapInfoHeader.biCompression = BI_RGB;
-			bitmapInfoHeader.biSizeImage = BITMAP_WIDTH * BITMAP_HEIGHT * sizeof(char) * 4;
-			bitmapInfoHeader.biClrUsed = 0;
-			bitmapInfoHeader.biClrImportant = 0;
-
-			BITMAPINFO bitmapInfo;
-			bitmapInfo.bmiHeader = bitmapInfoHeader;
-			bitmapInfo.bmiColors->rgbBlue = 0;
-			bitmapInfo.bmiColors->rgbGreen = 0;
-			bitmapInfo.bmiColors->rgbRed = 0;
-			bitmapInfo.bmiColors->rgbReserved = 0;
-
 			// Create Device Context for Bitmap
 			HDC digitalContext = GetDC(m_windowHandle);
 			bitmapDeviceContext = CreateCompatibleDC(digitalContext);
 			ReleaseDC(m_windowHandle, digitalContext);
-
+ 
 			// Create Bitmap
-			// This will give us a Handle to our new Bitmap and will point Data to a valid array where the Bitmap Color is located
-			bitmapHandle = CreateDIBSection(bitmapDeviceContext, &bitmapInfo, DIB_RGB_COLORS, &data, NULL, 0);
-			if (bitmapHandle == NULL || data == NULL)
-			{
-				WindowsUtility::DisplayLastError(TEXT("Failed to create Bitmap"));
-				return true;
-			}
+			bitmapHandle = WindowsUtility::CreateBitmap(BITMAP_WIDTH, BITMAP_HEIGHT, bitmapDeviceContext, &data);
+
+			SelectObject(bitmapDeviceContext, bitmapHandle);
 
 			// Set Bitmap Color Data
 			for (UINT i = 0; i < BITMAP_WIDTH * BITMAP_HEIGHT; ++i)
@@ -116,44 +103,69 @@ bool Window::HandleMessages(UINT message, WPARAM wParam, LPARAM lParam)
 				((unsigned char*)data)[(i * 4) + 2] = 232;
 				((unsigned char*)data)[(i * 4) + 3] = 0;
 			}
+
+			BufferedPaintInit();
 			
-			return true;
+			return 0;
+		}
+		case WM_ERASEBKGND:
+		{
+			return 1;
 		}
 		case WM_PAINT:
 		{
-			PAINTSTRUCT ps;
-			HDC digitalContext = BeginPaint(m_windowHandle, &ps);
+			// Get Window Digital Context (Paint Object)
+			HDC digitalContext = GetDC(m_windowHandle);
 
-			/// Fill a Rect with a custom color
+			// Get Window Draw Region
+			RECT clientRegion { 0 };
+			GetClientRect(m_windowHandle, &clientRegion);
+
+			// Start Buffered Paint
+			// This acts like using a Double Buffer Bitmap
+			HDC bufferedDC { 0 };
+			HPAINTBUFFER paintBuffer = BeginBufferedPaint(digitalContext, &clientRegion, BPBF_COMPATIBLEBITMAP, NULL, &bufferedDC);
+			if (paintBuffer == NULL || bufferedDC == NULL)
+			{
+				WindowsUtility::DisplayLastError(TEXT("Failed to Begin Buffered Paint"));
+
+				return 0;
+			}
+			
+			// Fill a Rect with a custom color
 			COLORREF color = RGB(255, 0, 0);
 			HBRUSH colorBrush = CreateSolidBrush(color);
-			FillRect(digitalContext, &ps.rcPaint, colorBrush);
+			FillRect(bufferedDC, &clientRegion, colorBrush);
 
+			// Fill a Rect using the DC's current Brush
+			SelectObject(bufferedDC, GetStockObject(DC_BRUSH));
+			SetDCBrushColor(bufferedDC, RGB(00, 0xff, 00));
+			PatBlt(bufferedDC, 100, 100, 10, 10, PATCOPY);
 
-			/// Fill a Rect using the DC's current Brush
-			SelectObject(digitalContext, GetStockObject(DC_BRUSH));
-			SetDCBrushColor(digitalContext, RGB(00, 0xff, 00));
-			PatBlt(digitalContext, 100, 100, 10, 10, PATCOPY);
-
-			/// Draw a Bitmap to the Digital Context
+			// Draw a Bitmap to the Digital Context
 			if (bitmapHandle != NULL)
 			{
 				BITMAP bitmap;
 				GetObject(bitmapHandle, sizeof(BITMAP), &bitmap);
 
-				HBITMAP oldBitmapHandle = (HBITMAP)SelectObject(bitmapDeviceContext, bitmapHandle);
-
-				BitBlt(digitalContext, 100, 200, bitmap.bmWidth, bitmap.bmHeight, bitmapDeviceContext, 0, 0, SRCCOPY);
-
-				SelectObject(bitmapDeviceContext, oldBitmapHandle);
+				BitBlt(bufferedDC, 100, 200, bitmap.bmWidth, bitmap.bmHeight, bitmapDeviceContext, 0, 0, SRCCOPY);
 			}
 
-			EndPaint(m_windowHandle, &ps);
-			return true;
+			DeleteObject(colorBrush);
+
+			EndBufferedPaint(paintBuffer, true);
+			ReleaseDC(m_windowHandle, digitalContext);
+
+			ValidateRect(m_windowHandle, NULL);
+
+			return 0;
 		}
 		case WM_LBUTTONDOWN:
 		{
-			if(!data) { return false; }
+			if(!data) 
+			{ 
+				return -1;
+			}
 
 			for (UINT i = 0; i < BITMAP_WIDTH * BITMAP_HEIGHT; ++i)
 			{
@@ -163,15 +175,18 @@ bool Window::HandleMessages(UINT message, WPARAM wParam, LPARAM lParam)
 				((unsigned char*)data)[(i * 4) + 3] = 0;
 			}
 
-			InvalidateRect(m_windowHandle, 0, true);
-
-			return true;
+			return 0;
 		}
+		case WM_CLOSE:
 		case WM_DESTROY:
 		{
-			PostQuitMessage(0);
-			return true;
+			BufferedPaintUnInit();
+
+			Destroy();
+
+			return 0;
 		}
 	}
-	return false;
+	
+	return -1;
 }
