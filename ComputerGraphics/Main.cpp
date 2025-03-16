@@ -16,7 +16,7 @@ int main()
 	{
 		for (uint32_t x = 0; x < WINDOW_WIDTH; x++)
 		{
-			COLORREF color = RGB(0, 0, 255);
+			COLORREF color = RGB(255, 0, 0);
 			canvas.PutPixel(x, y, color);
 		}
 	}

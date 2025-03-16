@@ -99,43 +99,59 @@ LRESULT Window::HandleMessages(UINT message, WPARAM wParam, LPARAM lParam)
 			// Create DC and Bitmap for Canvas
 			HDC canvasDC = CreateCompatibleDC(digitalContext);
 			HBITMAP canvasBitmap = CreateCompatibleBitmap(digitalContext, m_canvas->WIDTH, m_canvas->HEIGHT);
-			
-			BITMAPINFO bmi;
-			bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-			bmi.bmiHeader.biWidth = m_canvas->WIDTH;
-			bmi.bmiHeader.biHeight = m_canvas->HEIGHT;
-			bmi.bmiHeader.biPlanes = 1;
-			bmi.bmiHeader.biBitCount = sizeof(COLORREF) * 8;
-			bmi.bmiHeader.biCompression = DIB_RGB_COLORS;
-			bmi.bmiHeader.biSizeImage = m_canvas->HEIGHT * m_canvas->WIDTH * sizeof(COLORREF);
-			bmi.bmiHeader.biXPelsPerMeter = 0;
-			bmi.bmiHeader.biYPelsPerMeter = 0;
-			bmi.bmiHeader.biClrUsed = 0;
-			bmi.bmiHeader.biClrImportant = 0;
+
+			// Using BitMap Version 4 Header because it supports Color Masking.
+			// This allows us to define which RGB color is where in our Bitmap Data
+			// Notrmally, Windows Bitmap uses BGRA format, meaning the Red and Blue colors are swapped when using RGBA format.
+			// This could be fixed by using RGBQuad, but Initializer List would still have the same problem.
+			// Additionally, RGB() and COLORREF were supposed to fix it but didn't? IDK
+			// Therefore, we manually change the Color Masks to use RGBA Color Format
+			BITMAPV4HEADER bmv4H { 0 };
+			bmv4H.bV4Size = sizeof(BITMAPV4HEADER);
+			bmv4H.bV4Width = m_canvas->WIDTH;
+			bmv4H.bV4Height = m_canvas->HEIGHT;
+			bmv4H.bV4Planes = 1;
+			bmv4H.bV4BitCount = m_canvas->GetColorSize() * 8;
+			bmv4H.bV4V4Compression = BI_BITFIELDS;
+			bmv4H.bV4SizeImage = m_canvas->HEIGHT * m_canvas->WIDTH * m_canvas->GetColorSize();
+			bmv4H.bV4XPelsPerMeter = 0;
+			bmv4H.bV4YPelsPerMeter = 0;
+			bmv4H.bV4ClrUsed = 0;
+			bmv4H.bV4ClrImportant = 0;
+			bmv4H.bV4RedMask = 0x000000FF;
+			bmv4H.bV4GreenMask = 0x0000FF00;
+			bmv4H.bV4BlueMask = 0x00FF0000;
+			bmv4H.bV4AlphaMask = 0xFF000000;
+			bmv4H.bV4CSType = LCS_sRGB;
+			bmv4H.bV4Endpoints = { 0, 0, 0 };
+			bmv4H.bV4GammaRed = 0;
+			bmv4H.bV4GammaGreen = 0;
+			bmv4H.bV4GammaBlue = 0;
 
 			// Copy Canvas Pixels into Canvas DC and Bitmap
-			if (SetDIBits(canvasDC, canvasBitmap, 0, m_canvas->HEIGHT, m_canvas->GetPixels(), &bmi, DIB_RGB_COLORS))
+			if (SetDIBits(canvasDC, canvasBitmap, 0, m_canvas->HEIGHT, m_canvas->GetPixels(), (BITMAPINFO*) & bmv4H, DIB_RGB_COLORS))
 			{
 				SelectObject(canvasDC, canvasBitmap);
 
 				// Draw Canvas to Window
 				// Uses Stretching function, so we don't need to reallocate Canvas Size every time Window is resized
 				StretchBlt(
-				// Destination DC
-					digitalContext, 
-					0, 
+					// Destination DC
+					digitalContext,
 					0,
-					clientRegion.right - clientRegion.left, 
-					clientRegion.bottom - clientRegion.top, 
-				// Source DC
-					canvasDC, 
-					0, 
+					0,
+					clientRegion.right - clientRegion.left,
+					clientRegion.bottom - clientRegion.top,
+					// Source DC
+					canvasDC,
+					0,
 					0,
 					m_canvas->WIDTH,
 					m_canvas->HEIGHT,
 					SRCCOPY);
 			}
 			
+			// Cleanup
 			DeleteObject(canvasBitmap);
 			DeleteDC(canvasDC);
 			ReleaseDC(m_windowHandle, digitalContext);
