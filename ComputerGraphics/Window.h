@@ -38,9 +38,8 @@ public:
 
 	bool IsValid() const;
 
-	Canvas const* GetCanvas() { return m_canvas; }
-
 	void SetCanvas(Canvas const* const canvas) { m_canvas = canvas; }
+	Canvas const* GetCanvas() { return m_canvas; }
 
 private:
 	// Static Windows Procedure Callback for Message handling.
