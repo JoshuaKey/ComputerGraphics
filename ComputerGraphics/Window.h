@@ -6,6 +6,7 @@
 #include "Renderer.h"
 
 class WindowFactory;
+class Canvas;
 
 class Window
 {
@@ -15,7 +16,7 @@ class Window
 		HINSTANCE const instance,
 		HWND const window) :
 		m_windowTitle(windowTitle),
-		m_renderer(),
+		m_canvas(nullptr),
 		m_instanceHandle(instance),
 		m_windowHandle(window)
 	{ 
@@ -23,6 +24,7 @@ class Window
 public:
 	~Window()
 	{
+		m_canvas = nullptr;
 		m_instanceHandle = NULL;
 		m_windowHandle = NULL;
 	}
@@ -35,6 +37,10 @@ public:
 	void Destroy();
 
 	bool IsValid() const;
+
+	Canvas const* GetCanvas() { return m_canvas; }
+
+	void SetCanvas(Canvas const* const canvas) { m_canvas = canvas; }
 
 private:
 	// Static Windows Procedure Callback for Message handling.
@@ -49,9 +55,8 @@ private:
 private:
 	TCHAR const* const m_windowTitle;
 
-	Renderer m_renderer; 
+	Canvas const * m_canvas;
 
 	HINSTANCE m_instanceHandle; // Handle to the "instance" that created this window (Executable / DLL)
 	HWND m_windowHandle;		// Handle to the actual Window
-	
 };

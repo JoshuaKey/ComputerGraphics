@@ -3,6 +3,7 @@
 #include <gdiplus.h>
 #include <uxtheme.h>
 #include "WindowsUtility.h"
+#include "Canvas.h"
 
 void Window::Show()
 {
@@ -74,38 +75,10 @@ LRESULT Window::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 LRESULT Window::HandleMessages(UINT message, WPARAM wParam, LPARAM lParam)
 {
-	constexpr UINT BITMAP_WIDTH = 125;
-	constexpr UINT BITMAP_HEIGHT = 20;
-
-	static HBITMAP bitmapHandle { NULL };
-	static HDC bitmapDeviceContext { NULL };
-	static void* data = nullptr;
-
 	switch (message)
 	{
 		case WM_CREATE:
 		{
-			// Create Device Context for Bitmap
-			HDC digitalContext = GetDC(m_windowHandle);
-			bitmapDeviceContext = CreateCompatibleDC(digitalContext);
-			ReleaseDC(m_windowHandle, digitalContext);
- 
-			// Create Bitmap
-			bitmapHandle = WindowsUtility::CreateBitmap(BITMAP_WIDTH, BITMAP_HEIGHT, bitmapDeviceContext, &data);
-
-			SelectObject(bitmapDeviceContext, bitmapHandle);
-
-			// Set Bitmap Color Data
-			for (UINT i = 0; i < BITMAP_WIDTH * BITMAP_HEIGHT; ++i)
-			{
-				((unsigned char*)data)[(i * 4) + 0] = 191;
-				((unsigned char*)data)[(i * 4) + 1] = 255;
-				((unsigned char*)data)[(i * 4) + 2] = 232;
-				((unsigned char*)data)[(i * 4) + 3] = 0;
-			}
-
-			BufferedPaintInit();
-			
 			return 0;
 		}
 		case WM_ERASEBKGND:
@@ -114,6 +87,8 @@ LRESULT Window::HandleMessages(UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		case WM_PAINT:
 		{
+			if (!m_canvas) { return -1; }
+
 			// Get Window Digital Context (Paint Object)
 			HDC digitalContext = GetDC(m_windowHandle);
 
@@ -121,67 +96,58 @@ LRESULT Window::HandleMessages(UINT message, WPARAM wParam, LPARAM lParam)
 			RECT clientRegion { 0 };
 			GetClientRect(m_windowHandle, &clientRegion);
 
-			// Start Buffered Paint
-			// This acts like using a Double Buffer Bitmap
-			HDC bufferedDC { 0 };
-			HPAINTBUFFER paintBuffer = BeginBufferedPaint(digitalContext, &clientRegion, BPBF_COMPATIBLEBITMAP, NULL, &bufferedDC);
-			if (paintBuffer == NULL || bufferedDC == NULL)
-			{
-				WindowsUtility::DisplayLastError(TEXT("Failed to Begin Buffered Paint"));
+			// Create DC and Bitmap for Canvas
+			HDC canvasDC = CreateCompatibleDC(digitalContext);
+			HBITMAP canvasBitmap = CreateCompatibleBitmap(digitalContext, m_canvas->WIDTH, m_canvas->HEIGHT);
+			
+			BITMAPINFO bmi;
+			bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+			bmi.bmiHeader.biWidth = m_canvas->WIDTH;
+			bmi.bmiHeader.biHeight = m_canvas->HEIGHT;
+			bmi.bmiHeader.biPlanes = 1;
+			bmi.bmiHeader.biBitCount = sizeof(COLORREF) * 8;
+			bmi.bmiHeader.biCompression = DIB_RGB_COLORS;
+			bmi.bmiHeader.biSizeImage = m_canvas->HEIGHT * m_canvas->WIDTH * sizeof(COLORREF);
+			bmi.bmiHeader.biXPelsPerMeter = 0;
+			bmi.bmiHeader.biYPelsPerMeter = 0;
+			bmi.bmiHeader.biClrUsed = 0;
+			bmi.bmiHeader.biClrImportant = 0;
 
-				return 0;
+			// Copy Canvas Pixels into Canvas DC and Bitmap
+			if (SetDIBits(canvasDC, canvasBitmap, 0, m_canvas->HEIGHT, m_canvas->GetPixels(), &bmi, DIB_RGB_COLORS))
+			{
+				SelectObject(canvasDC, canvasBitmap);
+
+				// Draw Canvas to Window
+				// Uses Stretching function, so we don't need to reallocate Canvas Size every time Window is resized
+				StretchBlt(
+				// Destination DC
+					digitalContext, 
+					0, 
+					0,
+					clientRegion.right - clientRegion.left, 
+					clientRegion.bottom - clientRegion.top, 
+				// Source DC
+					canvasDC, 
+					0, 
+					0,
+					m_canvas->WIDTH,
+					m_canvas->HEIGHT,
+					SRCCOPY);
 			}
 			
-			// Fill a Rect with a custom color
-			COLORREF color = RGB(255, 0, 0);
-			HBRUSH colorBrush = CreateSolidBrush(color);
-			FillRect(bufferedDC, &clientRegion, colorBrush);
-
-			// Fill a Rect using the DC's current Brush
-			SelectObject(bufferedDC, GetStockObject(DC_BRUSH));
-			SetDCBrushColor(bufferedDC, RGB(00, 0xff, 00));
-			PatBlt(bufferedDC, 100, 100, 10, 10, PATCOPY);
-
-			// Draw a Bitmap to the Digital Context
-			if (bitmapHandle != NULL)
-			{
-				BITMAP bitmap;
-				GetObject(bitmapHandle, sizeof(BITMAP), &bitmap);
-
-				BitBlt(bufferedDC, 100, 200, bitmap.bmWidth, bitmap.bmHeight, bitmapDeviceContext, 0, 0, SRCCOPY);
-			}
-
-			DeleteObject(colorBrush);
-
-			EndBufferedPaint(paintBuffer, true);
+			DeleteObject(canvasBitmap);
+			DeleteDC(canvasDC);
 			ReleaseDC(m_windowHandle, digitalContext);
 
+			// Validate Painting
 			ValidateRect(m_windowHandle, NULL);
-
-			return 0;
-		}
-		case WM_LBUTTONDOWN:
-		{
-			if(!data) 
-			{ 
-				return -1;
-			}
-
-			for (UINT i = 0; i < BITMAP_WIDTH * BITMAP_HEIGHT; ++i)
-			{
-				((unsigned char*)data)[(i * 4) + 0] -= 5;
-				((unsigned char*)data)[(i * 4) + 1] -= 5; 
-				((unsigned char*)data)[(i * 4) + 2] -= 5;
-				((unsigned char*)data)[(i * 4) + 3] = 0;
-			}
 
 			return 0;
 		}
 		case WM_CLOSE:
 		case WM_DESTROY:
 		{
-			BufferedPaintUnInit();
-
 			Destroy();
 
 			return 0;
