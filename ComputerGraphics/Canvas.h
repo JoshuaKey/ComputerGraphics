@@ -2,7 +2,7 @@
 
 #include <memory>
 #include <Windows.h>
-//#include "Color.h"
+#include "Color.h"
 
 /// <summary>
 /// Canvas is a collection of "Pixels" or colors in an X and Y format.
@@ -10,7 +10,7 @@
 /// </summary>
 class Canvas
 {
-	typedef COLORREF ColorType;
+	typedef Color ColorType;
 
 public:
 	Canvas(uint32_t width, uint32_t height) :
