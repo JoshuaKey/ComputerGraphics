@@ -9,7 +9,7 @@ namespace
 	TCHAR const CLASS_NAME[] = TEXT("DefaultWindow");
 }
 
-std::unique_ptr<Window> WindowFactory::Create(TCHAR const * const WINDOW_TITLE, UINT const WINDOW_WIDTH, UINT const WINDOW_HEIGHT)
+std::unique_ptr<Window> WindowFactory::Create(TCHAR const * const WINDOW_TITLE, uint32_t const WINDOW_WIDTH, uint32_t const WINDOW_HEIGHT)
 {
 	DWORD result = NULL;
 	HINSTANCE instanceHandle = WindowsUtility::GetCurrentInstance();

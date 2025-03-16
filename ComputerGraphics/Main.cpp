@@ -1,13 +1,25 @@
+#include <Windows.h>
+#include <iostream>
 #include "WindowsUtility.h"
 #include "WindowFactory.h"
 #include "Window.h"
-#include <iostream>
+#include "Canvas.h"
 
 int main()
 {
-	constexpr UINT WINDOW_WIDTH = 1280;
-	constexpr UINT WINDOW_HEIGHT = 720;
+	constexpr uint32_t WINDOW_WIDTH = 1280;
+	constexpr uint32_t WINDOW_HEIGHT = 720;
 	constexpr TCHAR WINDOW_TITLE[] = TEXT("Sample Window");
+
+	Canvas canvas(WINDOW_WIDTH, WINDOW_HEIGHT);
+	for (uint32_t y = 0; y < WINDOW_HEIGHT; y++)
+	{
+		for (uint32_t x = 0; x < WINDOW_WIDTH; x++)
+		{
+			COLORREF color = RGB(0, 0, 255);
+			canvas.PutPixel(x, y, color);
+		}
+	}
 
 	std::unique_ptr<Window> window = WindowFactory::Create(WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 	if (!window || !window->IsValid())
@@ -17,6 +29,7 @@ int main()
 		return -1;
 	}
 
+	window->SetCanvas(&canvas);
 	window->Show();
 	window->Update();
 

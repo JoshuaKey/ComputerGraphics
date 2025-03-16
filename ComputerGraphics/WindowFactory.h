@@ -10,6 +10,6 @@ class Window;
 class WindowFactory
 {
 public:
-	static std::unique_ptr<Window> Create(const TCHAR* WINDOW_TITLE, UINT const WINDOW_WIDTH, UINT const WINDOW_HEIGHT);
+	static std::unique_ptr<Window> Create(TCHAR const * const WINDOW_TITLE, uint32_t const WINDOW_WIDTH, uint32_t const WINDOW_HEIGHT);
 };
 
